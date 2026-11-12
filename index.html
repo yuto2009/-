@@ -4,190 +4,280 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ブラウザでPython</title>
+<title>Python Web IDE</title>
 
+<!-- Pyodide -->
 <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+
+<!-- CodeMirror -->
+<link rel="stylesheet"
+ href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.css">
+<link rel="stylesheet"
+ href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/theme/material-darker.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/matchbrackets.min.js"></script>
 
 <style>
 :root {
-  --paper:#eef2ea;
-  --panel:#fbfcf8;
-  --ink:#1c2a22;
-  --muted:#5d6b62;
-  --line:#c9d3c4;
-  --accent:#2b5fd9;
-  --accent-ink:#fff;
-  --err:#ff9a90;
-  --out-bg:#18221c;
-  --out-ink:#dfeadf;
+  --bg:#111827;
+  --panel:#1f2937;
+  --panel2:#273449;
+  --line:#374151;
+  --text:#e5e7eb;
+  --muted:#9ca3af;
+  --accent:#4f83ff;
+  --green:#4ade80;
+  --red:#f87171;
 }
 
-@media (prefers-color-scheme:dark) {
-  :root {
-    --paper:#121a15;
-    --panel:#1a241e;
-    --ink:#e3ece4;
-    --muted:#93a398;
-    --line:#2d3a32;
-    --accent:#7ba2ff;
-    --accent-ink:#0d1a3a;
-    --err:#ff8a80;
-    --out-bg:#0c120e;
-    --out-ink:#dfeadf;
-  }
-}
-
-* {
-  box-sizing:border-box;
-}
-
-html,body {
-  height:100%;
-  margin:0;
-}
+* { box-sizing:border-box; }
 
 body {
-  background:var(--paper);
-  color:var(--ink);
-  font:16px/1.6 "Hiragino Sans","Yu Gothic UI",
-       "Noto Sans JP",system-ui,sans-serif;
+  margin:0;
+  height:100vh;
   display:flex;
   flex-direction:column;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Arial,"Yu Gothic",sans-serif;
 }
 
 header {
   display:flex;
-  flex-wrap:wrap;
   align-items:center;
+  flex-wrap:wrap;
   gap:10px;
-  padding:12px 20px;
-  border-bottom:1px solid var(--line);
+  padding:12px 16px;
   background:var(--panel);
+  border-bottom:1px solid var(--line);
 }
 
 h1 {
-  font-size:1.1rem;
+  font-size:18px;
   margin:0 auto 0 0;
 }
 
-#status {
-  font-size:.85rem;
-  color:var(--muted);
-}
-
-select,button {
-  font:inherit;
-  font-size:.85rem;
-  padding:7px 12px;
-  border-radius:6px;
+button,select,input {
+  background:var(--panel2);
+  color:var(--text);
   border:1px solid var(--line);
-  background:var(--panel);
-  color:var(--ink);
-  cursor:pointer;
+  border-radius:6px;
+  padding:8px 12px;
+  font-size:13px;
 }
 
-button:hover {
-  filter:brightness(.94);
-}
+button { cursor:pointer; }
 
-button.run {
-  background:var(--accent);
-  color:var(--accent-ink);
-  border-color:var(--accent);
-  font-weight:700;
-}
+button:hover { filter:brightness(1.2); }
 
 button:disabled {
-  opacity:.5;
-  cursor:wait;
+  opacity:.45;
+  cursor:not-allowed;
 }
 
-:focus-visible {
-  outline:3px solid var(--accent);
-  outline-offset:2px;
+.primary {
+  background:var(--accent);
+  border-color:var(--accent);
+  color:white;
+  font-weight:bold;
 }
 
-main {
+#status {
+  color:var(--green);
+  font-size:12px;
+}
+
+.workspace {
   flex:1;
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:16px;
-  padding:16px 20px;
   min-height:0;
+  display:grid;
+  grid-template-columns:190px minmax(0,1fr);
 }
 
-.pane {
+.sidebar {
+  background:var(--panel);
+  border-right:1px solid var(--line);
+  padding:12px;
+  overflow:auto;
+}
+
+.section-title {
+  font-size:12px;
+  color:var(--muted);
+  margin-bottom:10px;
+}
+
+.file-list {
   display:flex;
   flex-direction:column;
+  gap:5px;
+}
+
+.file-item {
+  width:100%;
+  text-align:left;
+  padding:8px;
+  border:1px solid transparent;
+  background:transparent;
+}
+
+.file-item.active {
+  background:var(--panel2);
+  border-color:var(--accent);
+}
+
+.file-actions {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:5px;
+  margin-top:12px;
+}
+
+.file-actions button {
+  padding:7px 4px;
+  font-size:11px;
+}
+
+.editor-area {
+  min-width:0;
   min-height:0;
+  display:flex;
+  flex-direction:column;
 }
 
-.pane label {
-  font-size:.85rem;
-  color:var(--muted);
-  margin-bottom:6px;
-}
-
-textarea,pre {
-  flex:1;
-  margin:0;
-  padding:14px;
-  border-radius:8px;
-  border:1px solid var(--line);
-  font:14px/1.6 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-  overflow:auto;
-  min-height:0;
-}
-
-textarea {
+.editor-header {
+  padding:8px 12px;
   background:var(--panel);
-  color:var(--ink);
-  resize:none;
-  tab-size:4;
-  white-space:pre;
+  border-bottom:1px solid var(--line);
+  font-size:13px;
 }
 
-pre {
-  background:var(--out-bg);
-  color:var(--out-ink);
+.editor-container {
+  flex:1;
+  min-height:150px;
+  overflow:hidden;
+}
+
+.CodeMirror {
+  height:100%;
+  font-size:14px;
+  line-height:1.6;
+}
+
+.bottom {
+  height:42%;
+  min-height:220px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  border-top:2px solid var(--line);
+}
+
+.bottom-panel {
+  min-width:0;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.bottom-panel + .bottom-panel {
+  border-left:1px solid var(--line);
+}
+
+.panel-header {
+  padding:9px 12px;
+  background:var(--panel);
+  border-bottom:1px solid var(--line);
+  font-size:12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+#terminal {
+  flex:1;
+  overflow:auto;
+  padding:12px;
+  background:#080d14;
+  color:#d1fae5;
+  font:13px/1.6 Consolas,monospace;
   white-space:pre-wrap;
   word-break:break-word;
 }
 
-pre .err {
-  color:var(--err);
-}
+#terminal .error { color:#fca5a5; }
+#terminal .system { color:#93c5fd; }
+#terminal .input-echo { color:#fcd34d; }
 
-.toolbar {
+.terminal-input-row {
   display:flex;
-  flex-wrap:wrap;
+  background:#080d14;
+  border-top:1px solid var(--line);
+  padding:8px;
   gap:8px;
-  margin-bottom:10px;
-  align-items:center;
 }
 
-#executionTime {
-  font-size:.8rem;
-  color:var(--muted);
-  margin-left:auto;
+#terminalInput {
+  flex:1;
+  min-width:0;
+  background:#172033;
+}
+
+#terminalInput:disabled {
+  opacity:.5;
+}
+
+#charts {
+  flex:1;
+  overflow:auto;
+  background:#fff;
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:12px;
+}
+
+#charts img {
+  max-width:100%;
+  height:auto;
+}
+
+.chart-placeholder {
+  color:#64748b;
+  font-size:13px;
+  margin:auto;
+  text-align:center;
 }
 
 footer {
-  padding:8px 20px;
-  font-size:.75rem;
+  padding:6px 12px;
+  background:var(--panel);
   color:var(--muted);
+  font-size:11px;
   border-top:1px solid var(--line);
 }
 
-@media(max-width:760px) {
-  main {
-    grid-template-columns:1fr;
-    grid-template-rows:1fr 1fr;
+@media(max-width:750px) {
+  .workspace {
+    grid-template-columns:110px minmax(0,1fr);
   }
 
-  header {
-    padding:10px;
+  .bottom {
+    grid-template-columns:1fr;
+    grid-template-rows:1fr 1fr;
+    height:45%;
   }
+
+  .bottom-panel + .bottom-panel {
+    border-left:0;
+    border-top:1px solid var(--line);
+  }
+
+  header { gap:5px; }
+  h1 { width:100%; }
 }
 </style>
 </head>
@@ -195,425 +285,784 @@ footer {
 <body>
 
 <header>
-  <h1>ブラウザでPython</h1>
-
-  <span id="status" role="status">Pythonを読み込み中…</span>
-
-  <select id="examples" aria-label="サンプルを選ぶ">
-    <option value="">サンプルを選ぶ</option>
-    <option value="hello">Hello World</option>
-    <option value="loop">ループとFizzBuzz</option>
-    <option value="func">関数とクラス</option>
-    <option value="input">input()のテスト</option>
-    <option value="numpy">NumPy</option>
-  </select>
-
-  <select id="history" aria-label="実行履歴">
-    <option value="">実行履歴</option>
-  </select>
-
-  <button id="openFile">開く</button>
-  <button id="saveFile">保存</button>
-  <button id="clear">出力を消す</button>
-  <button id="run" class="run" disabled>実行 (Ctrl+Enter)</button>
-
+  <h1>Python Web IDE</h1>
+  <span id="status">Python読み込み中...</span>
+  <button id="run" class="primary" disabled>▶ 実行</button>
+  <button id="stop" disabled>停止要求</button>
+  <button id="download">保存</button>
+  <button id="upload">開く</button>
+  <button id="clear">出力消去</button>
   <input type="file" id="fileInput" accept=".py,.txt" hidden>
 </header>
 
-<main>
-  <section class="pane">
-    <label for="code">Pythonコード</label>
+<div class="workspace">
 
-    <textarea
-      id="code"
-      spellcheck="false"
-      autocomplete="off"
-      autocapitalize="off"
-      placeholder="Pythonコードを入力してください"
-    ></textarea>
-  </section>
+  <aside class="sidebar">
+    <div class="section-title">FILES</div>
+    <div id="fileList" class="file-list"></div>
 
-  <section class="pane">
-    <div class="toolbar">
-      <label for="out">実行結果</label>
-      <span id="executionTime"></span>
+    <div class="file-actions">
+      <button id="newFile">＋ 新規</button>
+      <button id="deleteFile">削除</button>
+      <button id="renameFile">名前変更</button>
+      <button id="exportAll">全保存</button>
+    </div>
+  </aside>
+
+  <section class="editor-area">
+
+    <div class="editor-header">
+      <span id="currentFile">main.py</span>
+      <span style="float:right;color:#9ca3af">
+        Python Editor
+      </span>
     </div>
 
-    <pre id="out" aria-live="polite"></pre>
+    <div class="editor-container">
+      <textarea id="code"></textarea>
+    </div>
+
   </section>
-</main>
+
+</div>
+
+<div class="bottom">
+
+  <section class="bottom-panel">
+
+    <div class="panel-header">
+      <span>TERMINAL</span>
+      <span id="executionTime">待機中</span>
+    </div>
+
+    <div id="terminal"></div>
+
+    <div class="terminal-input-row">
+      <input
+        id="terminalInput"
+        placeholder="Pythonの入力待ち..."
+        disabled
+      >
+      <button id="sendInput" disabled>送信</button>
+    </div>
+
+  </section>
+
+  <section class="bottom-panel">
+
+    <div class="panel-header">
+      <span>GRAPH / OUTPUT</span>
+      <button id="clearCharts">グラフ消去</button>
+    </div>
+
+    <div id="charts">
+      <div class="chart-placeholder">
+        Matplotlibのグラフがここに表示されます
+      </div>
+    </div>
+
+  </section>
+
+</div>
 
 <footer>
-  Pyodide 0.26.4 | Pythonをブラウザ内で実行しています
-  <span id="saveStatus"> | 自動保存待機中</span>
+  Pyodide 0.26.4 / CodeMirror 5 / Matplotlib
+  <span id="saveStatus"> | 保存待機中</span>
 </footer>
+
 
 <script>
 
 // ========================================
-// 1. サンプルコード
-// ========================================
-
-const EXAMPLES = {
-
-hello: `print("Hello, World!")
-name = "Python"
-print(f"{name} がブラウザで動いています")`,
-
-loop: `for i in range(1, 16):
-    if i % 15 == 0:
-        print("FizzBuzz")
-    elif i % 3 == 0:
-        print("Fizz")
-    elif i % 5 == 0:
-        print("Buzz")
-    else:
-        print(i)`,
-
-func: `class Counter:
-    def __init__(self):
-        self.n = 0
-
-    def up(self):
-        self.n += 1
-        return self.n
-
-c = Counter()
-
-for _ in range(3):
-    print(c.up())`,
-
-input: `name = input("名前を入力してください: ")
-print("こんにちは、" + name + "さん！")
-
-age = input("年齢を入力してください: ")
-print("あなたの年齢:", age)`,
-
-numpy: `import numpy as np
-
-a = np.arange(12).reshape(3, 4)
-
-print(a)
-print("平均:", a.mean())`
-
-};
-
-
-// ========================================
-// 2. HTML要素の取得
+// 1. 基本設定
 // ========================================
 
 const $ = id => document.getElementById(id);
 
-const code = $("code");
-const out = $("out");
-const runBtn = $("run");
-const status = $("status");
-const historySelect = $("history");
-
 let pyodide = null;
-let isRunning = false;
+let running = false;
+let waitingInput = null;
+let stopRequested = false;
+
+const STORAGE_KEY = "python_ide_files";
 
 
 // ========================================
-// 3. 自動保存
+// 2. ファイル管理
 // ========================================
 
-const STORAGE_KEY = "browser_python_code";
+let files = {};
 
-function saveAuto() {
+let currentFile = "main.py";
+
+function loadFiles() {
+
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+
+    if(saved) {
+      files = JSON.parse(saved);
+    }
+
+  } catch(e) {
+    files = {};
+  }
+
+  if(!Object.keys(files).length) {
+    files = {
+      "main.py": `print("Hello Python!")
+
+name = input("名前を入力してください: ")
+
+print("こんにちは", name)
+`
+    };
+  }
+
+  if(!files[currentFile]) {
+    currentFile = Object.keys(files)[0];
+  }
+
+}
+
+function saveFiles() {
 
   try {
 
-    localStorage.setItem(STORAGE_KEY, code.value);
+    if(editor) {
+      files[currentFile] = editor.getValue();
+    }
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(files)
+    );
 
     $("saveStatus").textContent = " | 自動保存済み";
 
   } catch(e) {
 
-    $("saveStatus").textContent = " | 自動保存できません";
+    $("saveStatus").textContent = " | 保存失敗";
 
   }
 
 }
 
-function loadAuto() {
+function renderFiles() {
 
-  try {
+  const list = $("fileList");
 
-    const saved = localStorage.getItem(STORAGE_KEY);
+  list.innerHTML = "";
 
-    if(saved !== null) {
-      code.value = saved;
-    } else {
-      code.value = EXAMPLES.hello;
+  Object.keys(files).forEach(name => {
+
+    const button = document.createElement("button");
+
+    button.className = "file-item";
+
+    if(name === currentFile) {
+      button.classList.add("active");
     }
 
-  } catch(e) {
+    button.textContent = "📄 " + name;
 
-    code.value = EXAMPLES.hello;
-
-  }
-
-}
-
-code.addEventListener("input", saveAuto);
-
-
-// ========================================
-// 4. 出力表示
-// ========================================
-
-function write(text, isErr = false) {
-
-  const span = document.createElement("span");
-
-  if(isErr) {
-    span.className = "err";
-  }
-
-  span.textContent = text + "\n";
-
-  out.appendChild(span);
-
-  out.scrollTop = out.scrollHeight;
-
-}
-
-
-// ========================================
-// 5. Pythonの初期化
-// ========================================
-
-async function init() {
-
-  try {
-
-    pyodide = await loadPyodide();
-
-    // 標準出力
-    pyodide.setStdout({
-      batched: s => write(s)
+    button.addEventListener("click", () => {
+      switchFile(name);
     });
 
-    // エラー出力
-    pyodide.setStderr({
-      batched: s => write(s, true)
-    });
-
-    // input()用の標準入力
-    let stdinQueue = [];
-
-    pyodide.setStdin({
-
-      stdin: () => {
-
-        // 入力データがなくなったら入力ダイアログを表示
-        if(stdinQueue.length === 0) {
-
-          const value = window.prompt("Pythonからの入力");
-
-          // キャンセルされた場合は空行として扱う
-          const input = value === null ? "" : value;
-
-          // 日本語も扱えるようUTF-8に変換
-          stdinQueue = Array.from(
-            new TextEncoder().encode(input + "\n")
-          );
-
-        }
-
-        return stdinQueue.shift();
-
-      }
-
-    });
-
-    status.textContent = "準備できました";
-
-    runBtn.disabled = false;
-
-  } catch(e) {
-
-    status.textContent = "Pythonの読み込みに失敗しました";
-
-    write(String(e.message || e), true);
-
-  }
-
-}
-
-
-// ========================================
-// 6. Python実行
-// ========================================
-
-async function run() {
-
-  if(!pyodide || isRunning) return;
-
-  isRunning = true;
-
-  runBtn.disabled = true;
-
-  status.textContent = "実行中…";
-
-  $("executionTime").textContent = "";
-
-  const startTime = performance.now();
-
-  const sourceCode = code.value;
-
-  try {
-
-    if(!sourceCode.trim()) {
-
-      write("コードが入力されていません。", true);
-
-      return;
-
-    }
-
-    write(">>> Pythonを実行します");
-
-    // importされているパッケージを読み込む
-    await pyodide.loadPackagesFromImports(sourceCode);
-
-    // Pythonコードを実行
-    await pyodide.runPythonAsync(sourceCode);
-
-    const elapsed = performance.now() - startTime;
-
-    $("executionTime").textContent =
-      `実行時間: ${elapsed.toFixed(2)} ms`;
-
-    write(">>> 実行完了");
-
-    // 実行履歴を保存
-    saveHistory(sourceCode);
-
-  } catch(e) {
-
-    write("実行エラー:", true);
-
-    write(String(e.message || e), true);
-
-  } finally {
-
-    isRunning = false;
-
-    runBtn.disabled = false;
-
-    status.textContent = "準備できました";
-
-  }
-
-}
-
-
-// ========================================
-// 7. 実行履歴
-// ========================================
-
-const HISTORY_KEY = "browser_python_history";
-
-function getHistory() {
-
-  try {
-
-    return JSON.parse(
-      localStorage.getItem(HISTORY_KEY) || "[]"
-    );
-
-  } catch(e) {
-
-    return [];
-
-  }
-
-}
-
-function saveHistory(sourceCode) {
-
-  let history = getHistory();
-
-  // 同じコードがあれば削除
-  history = history.filter(item => item !== sourceCode);
-
-  // 最新のコードを先頭に追加
-  history.unshift(sourceCode);
-
-  // 最大10件
-  history = history.slice(0, 10);
-
-  try {
-
-    localStorage.setItem(
-      HISTORY_KEY,
-      JSON.stringify(history)
-    );
-
-  } catch(e) {
-
-    write("実行履歴を保存できませんでした。", true);
-
-  }
-
-  updateHistory();
-
-}
-
-function updateHistory() {
-
-  const history = getHistory();
-
-  historySelect.innerHTML =
-    '<option value="">実行履歴</option>';
-
-  history.forEach((item, index) => {
-
-    const option = document.createElement("option");
-
-    option.value = index;
-
-    option.textContent =
-      `${index + 1}：${item.split("\n")[0].slice(0, 25)}`;
-
-    historySelect.appendChild(option);
+    list.appendChild(button);
 
   });
 
 }
 
-historySelect.addEventListener("change", () => {
+function switchFile(name) {
 
-  const index = historySelect.value;
+  if(!files[name]) return;
 
-  if(index === "") return;
-
-  const history = getHistory();
-
-  if(history[index] !== undefined) {
-
-    code.value = history[index];
-
-    saveAuto();
-
+  if(editor) {
+    files[currentFile] = editor.getValue();
   }
 
-  historySelect.value = "";
+  currentFile = name;
+
+  editor.setValue(files[name]);
+
+  $("currentFile").textContent = name;
+
+  renderFiles();
+
+  saveFiles();
+
+}
+
+function createFile() {
+
+  const name = prompt("ファイル名を入力してください");
+
+  if(!name) return;
+
+  if(!/^[a-zA-Z0-9_-]+\.py$/.test(name)) {
+    alert("ファイル名は英数字と_、-を使い、.pyで終わるようにしてください");
+    return;
+  }
+
+  if(files[name]) {
+    alert("同じ名前のファイルがあります");
+    return;
+  }
+
+  files[name] = "";
+
+  switchFile(name);
+
+}
+
+function deleteFile() {
+
+  if(Object.keys(files).length <= 1) {
+    alert("最後のファイルは削除できません");
+    return;
+  }
+
+  if(!confirm(currentFile + " を削除しますか？")) return;
+
+  delete files[currentFile];
+
+  currentFile = Object.keys(files)[0];
+
+  editor.setValue(files[currentFile]);
+
+  $("currentFile").textContent = currentFile;
+
+  renderFiles();
+
+  saveFiles();
+
+}
+
+function renameFile() {
+
+  const name = prompt("新しいファイル名", currentFile);
+
+  if(!name || name === currentFile) return;
+
+  if(!/^[a-zA-Z0-9_-]+\.py$/.test(name)) {
+    alert("ファイル名が正しくありません");
+    return;
+  }
+
+  if(files[name]) {
+    alert("同じ名前のファイルがあります");
+    return;
+  }
+
+  files[name] = files[currentFile];
+
+  delete files[currentFile];
+
+  currentFile = name;
+
+  $("currentFile").textContent = name;
+
+  renderFiles();
+
+  saveFiles();
+
+}
+
+
+// ========================================
+// 3. CodeMirrorエディタ
+// ========================================
+
+let editor = null;
+
+function initEditor() {
+
+  editor = CodeMirror.fromTextArea($("code"), {
+
+    mode:"python",
+
+    theme:"material-darker",
+
+    lineNumbers:true,
+
+    matchBrackets:true,
+
+    autoCloseBrackets:true,
+
+    indentUnit:4,
+
+    tabSize:4,
+
+    lineWrapping:false,
+
+    extraKeys: {
+      "Ctrl-Enter": runPython,
+      "Cmd-Enter": runPython,
+      "Tab": function(cm) {
+        cm.replaceSelection("    ", "end");
+      }
+    }
+
+  });
+
+  editor.setValue(files[currentFile]);
+
+  editor.on("change", () => {
+
+    files[currentFile] = editor.getValue();
+
+    saveFiles();
+
+  });
+
+}
+
+
+// ========================================
+// 4. ターミナル
+// ========================================
+
+function terminalWrite(text, type = "") {
+
+  const terminal = $("terminal");
+
+  const line = document.createElement("div");
+
+  if(type) {
+    line.className = type;
+  }
+
+  line.textContent = text;
+
+  terminal.appendChild(line);
+
+  terminal.scrollTop = terminal.scrollHeight;
+
+}
+
+function clearTerminal() {
+  $("terminal").innerHTML = "";
+}
+
+function terminalInput(promptText = "") {
+
+  terminalWrite(promptText);
+
+  $("terminalInput").disabled = false;
+  $("sendInput").disabled = false;
+
+  $("terminalInput").value = "";
+  $("terminalInput").focus();
+
+  return new Promise(resolve => {
+
+    waitingInput = resolve;
+
+  });
+
+}
+
+function sendTerminalInput() {
+
+  if(!waitingInput) return;
+
+  const value = $("terminalInput").value;
+
+  terminalWrite("> " + value, "input-echo");
+
+  const resolve = waitingInput;
+
+  waitingInput = null;
+
+  $("terminalInput").disabled = true;
+  $("sendInput").disabled = true;
+
+  resolve(value);
+
+}
+
+$("sendInput").addEventListener("click", sendTerminalInput);
+
+$("terminalInput").addEventListener("keydown", e => {
+
+  if(e.key === "Enter") {
+    sendTerminalInput();
+  }
 
 });
 
 
 // ========================================
-// 8. Pythonファイルを保存
+// 5. グラフ表示
 // ========================================
 
-$("saveFile").addEventListener("click", () => {
+window._render_chart_js = function(dataURL) {
+
+  const container = $("charts");
+
+  const placeholder = container.querySelector(".chart-placeholder");
+
+  if(placeholder) {
+    placeholder.remove();
+  }
+
+  const img = document.createElement("img");
+
+  img.src = dataURL;
+
+  container.appendChild(img);
+
+  container.scrollTop = container.scrollHeight;
+
+};
+
+$("clearCharts").addEventListener("click", () => {
+
+  $("charts").innerHTML =
+    '<div class="chart-placeholder">グラフはまだありません</div>';
+
+});
+
+
+// ========================================
+// 6. Pyodide初期化
+// ========================================
+
+async function initPython() {
+
+  try {
+
+    pyodide = await loadPyodide();
+
+    pyodide.setStdout({
+      batched: text => terminalWrite(text)
+    });
+
+    pyodide.setStderr({
+      batched: text => terminalWrite(text, "error")
+    });
+
+    // JavaScriptの入力関数をPythonに渡す
+    pyodide.globals.set(
+      "_terminal_input_js",
+      terminalInput
+    );
+
+    // Python側の入力関数を準備
+    await pyodide.runPythonAsync(`
+
+async def _browser_input(prompt=""):
+
+    return await _terminal_input_js(str(prompt))
+
+`);
+
+    // Python仮想ファイルシステム
+    pyodide.FS.mkdirTree("/workspace");
+
+    // matplotlibのグラフ出力関数
+    await pyodide.runPythonAsync(`
+
+import sys
+import os
+import io
+import base64
+
+sys.path.insert(0, "/workspace")
+
+os.chdir("/workspace")
+
+`);
+
+    $("status").textContent = "Python準備完了";
+
+    $("run").disabled = false;
+
+  } catch(e) {
+
+    $("status").textContent = "読み込み失敗";
+
+    terminalWrite(String(e), "error");
+
+  }
+
+}
+
+
+// ========================================
+// 7. 複数ファイルをPythonに渡す
+// ========================================
+
+function writeFilesToPython() {
+
+  files[currentFile] = editor.getValue();
+
+  for(const [name, content] of Object.entries(files)) {
+
+    const path = "/workspace/" + name;
+
+    pyodide.FS.writeFile(
+      path,
+      content,
+      { encoding:"utf8" }
+    );
+
+  }
+
+}
+
+
+// ========================================
+// 8. Pythonのinput()を非同期入力に変換
+// ========================================
+
+const INPUT_TRANSFORMER = `
+
+import ast
+import inspect
+
+class _InputTransformer(ast.NodeTransformer):
+
+    def visit_Call(self, node):
+
+        self.generic_visit(node)
+
+        if isinstance(node.func, ast.Name) and node.func.id == "input":
+
+            return ast.copy_location(
+                ast.Await(
+                    ast.Call(
+                        func=ast.Name(
+                            id="_browser_input",
+                            ctx=ast.Load()
+                        ),
+                        args=node.args,
+                        keywords=node.keywords
+                    )
+                ),
+                node
+            )
+
+        return node
+
+
+async def _run_source(source, filename):
+
+    tree = ast.parse(source, filename=filename)
+
+    tree = _InputTransformer().visit(tree)
+
+    ast.fix_missing_locations(tree)
+
+    compiled = compile(
+        tree,
+        filename,
+        "exec",
+        flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
+    )
+
+    result = eval(compiled, globals())
+
+    if inspect.isawaitable(result):
+        await result
+
+`;
+
+
+// ========================================
+// 9. Matplotlibの準備
+// ========================================
+
+async function setupMatplotlib() {
+
+  await pyodide.runPythonAsync(`
+
+import matplotlib
+
+matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt
+import io
+import base64
+
+from js import _render_chart_js
+
+
+def _browser_show():
+
+    buffer = io.BytesIO()
+
+    plt.savefig(
+        buffer,
+        format="png",
+        bbox_inches="tight"
+    )
+
+    encoded = base64.b64encode(
+        buffer.getvalue()
+    ).decode("ascii")
+
+    _render_chart_js(
+        "data:image/png;base64," + encoded
+    )
+
+    plt.close("all")
+
+
+plt.show = _browser_show
+
+`);
+
+}
+
+
+// ========================================
+// 10. Python実行
+// ========================================
+
+async function runPython() {
+
+  if(!pyodide || running) return;
+
+  running = true;
+  stopRequested = false;
+
+  $("run").disabled = true;
+  $("stop").disabled = false;
+
+  $("status").textContent = "実行中...";
+
+  $("executionTime").textContent = "実行中";
+
+  const start = performance.now();
+
+  terminalWrite(">>> " + currentFile, "system");
+
+  try {
+
+    // パッケージを読み込む
+    const source = editor.getValue();
+
+    await pyodide.loadPackagesFromImports(source);
+
+    // 全ファイルを仮想FSに書き込む
+    writeFilesToPython();
+
+    // モジュールの再読み込みを有効にする
+    await pyodide.runPythonAsync(`
+
+import os
+import sys
+import importlib
+
+os.chdir("/workspace")
+
+if "/workspace" not in sys.path:
+    sys.path.insert(0, "/workspace")
+
+importlib.invalidate_caches()
+
+`);
+
+    // Matplotlibを必要な場合だけ準備
+    if(
+      source.includes("matplotlib") ||
+      source.includes("plt.")
+    ) {
+
+      await setupMatplotlib();
+
+    }
+
+    // input()変換用関数を準備
+    await pyodide.runPythonAsync(INPUT_TRANSFORMER);
+
+    // Pythonコードを渡す
+    pyodide.globals.set("_source_code", source);
+    pyodide.globals.set("_source_filename", currentFile);
+
+    // 実行
+    await pyodide.runPythonAsync(
+      "await _run_source(_source_code, _source_filename)"
+    );
+
+    terminalWrite(">>> 実行完了", "system");
+
+  } catch(e) {
+
+    terminalWrite("実行エラー:", "error");
+
+    terminalWrite(
+      String(e.message || e),
+      "error"
+    );
+
+  } finally {
+
+    const elapsed = performance.now() - start;
+
+    $("executionTime").textContent =
+      elapsed.toFixed(2) + " ms";
+
+    $("status").textContent = "Python準備完了";
+
+    $("run").disabled = false;
+    $("stop").disabled = true;
+
+    running = false;
+
+    saveFiles();
+
+  }
+
+}
+
+
+// ========================================
+// 11. 停止要求
+// ========================================
+
+$("stop").addEventListener("click", () => {
+
+  if(!running || !pyodide) return;
+
+  stopRequested = true;
+
+  // Pyodideの実行中断を要求
+  try {
+
+    pyodide.setInterruptBuffer(
+      new Uint8Array(new SharedArrayBuffer(1))
+    );
+
+    terminalWrite(
+      "停止要求を送りました。実行状況によっては停止できない場合があります。",
+      "system"
+    );
+
+  } catch(e) {
+
+    terminalWrite(
+      "このブラウザでは停止機能を利用できません。",
+      "error"
+    );
+
+  }
+
+});
+
+
+// ========================================
+// 12. ファイル保存・読み込み
+// ========================================
+
+$("download").addEventListener("click", () => {
 
   const blob = new Blob(
-    [code.value],
+    [editor.getValue()],
     { type:"text/x-python;charset=utf-8" }
   );
 
@@ -622,24 +1071,16 @@ $("saveFile").addEventListener("click", () => {
   const a = document.createElement("a");
 
   a.href = url;
-
-  a.download = "main.py";
+  a.download = currentFile;
 
   a.click();
 
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 
 });
 
-
-// ========================================
-// 9. Pythonファイルを読み込む
-// ========================================
-
-$("openFile").addEventListener("click", () => {
-
+$("upload").addEventListener("click", () => {
   $("fileInput").click();
-
 });
 
 $("fileInput").addEventListener("change", async e => {
@@ -648,106 +1089,69 @@ $("fileInput").addEventListener("change", async e => {
 
   if(!file) return;
 
-  try {
+  const name = file.name.endsWith(".py")
+    ? file.name
+    : file.name + ".py";
 
-    code.value = await file.text();
+  files[name] = await file.text();
 
-    saveAuto();
+  switchFile(name);
 
-    write(`ファイルを読み込みました: ${file.name}`);
-
-  } catch(err) {
-
-    write("ファイルの読み込みに失敗しました。", true);
-
-  }
-
-  // 同じファイルを再度選べるようにする
-  e.target.value = "";
-
-});
-
-
-// ========================================
-// 10. ボタン・サンプルのイベント
-// ========================================
-
-runBtn.addEventListener("click", run);
-
-$("clear").addEventListener("click", () => {
-
-  out.textContent = "";
-
-  $("executionTime").textContent = "";
-
-});
-
-$("examples").addEventListener("change", e => {
-
-  const value = e.target.value;
-
-  if(EXAMPLES[value]) {
-
-    code.value = EXAMPLES[value];
-
-    saveAuto();
-
-  }
+  terminalWrite("読み込み: " + name, "system");
 
   e.target.value = "";
 
 });
 
+$("exportAll").addEventListener("click", () => {
 
-// ========================================
-// 11. キーボード操作
-// ========================================
+  saveFiles();
 
-code.addEventListener("keydown", e => {
+  const blob = new Blob(
+    [JSON.stringify(files, null, 2)],
+    { type:"application/json" }
+  );
 
-  // Tabで4つの空白を入力
-  if(e.key === "Tab") {
+  const url = URL.createObjectURL(blob);
 
-    e.preventDefault();
+  const a = document.createElement("a");
 
-    const start = code.selectionStart;
-    const end = code.selectionEnd;
+  a.href = url;
+  a.download = "python-project.json";
 
-    code.setRangeText(
-      "    ",
-      start,
-      end,
-      "end"
-    );
+  a.click();
 
-    saveAuto();
-
-  }
-
-  // Ctrl + Enterで実行
-  else if(
-    e.key === "Enter" &&
-    (e.ctrlKey || e.metaKey)
-  ) {
-
-    e.preventDefault();
-
-    run();
-
-  }
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 
 });
 
 
 // ========================================
-// 12. 起動処理
+// 13. 各種ボタン
 // ========================================
 
-loadAuto();
+$("run").addEventListener("click", runPython);
 
-updateHistory();
+$("newFile").addEventListener("click", createFile);
 
-init();
+$("deleteFile").addEventListener("click", deleteFile);
+
+$("renameFile").addEventListener("click", renameFile);
+
+$("clear").addEventListener("click", clearTerminal);
+
+
+// ========================================
+// 14. 起動
+// ========================================
+
+loadFiles();
+
+initEditor();
+
+renderFiles();
+
+initPython();
 
 </script>
 
