@@ -837,22 +837,35 @@ function renderFiles() {
 
 }
 
+
 function switchFile(name) {
 
-  if(files[name] === undefined) return;
+  // ファイルが存在するか確認する
+  // 空文字のファイルも存在すると判断する
+  if (!Object.prototype.hasOwnProperty.call(files, name)) {
+    console.warn("ファイルが見つかりません:", name);
+    return;
+  }
 
+  // 現在のファイルの内容を保存
   files[currentFile] = editor.getValue();
 
+  // 開くファイルを変更
   currentFile = name;
 
-  editor.setValue(files[name]);
+  // エディタにファイル内容を表示
+  editor.setValue(files[currentFile]);
 
-  $("currentFile").textContent = name;
+  // 現在のファイル名を更新
+  $("currentFile").textContent = currentFile;
 
+  // ファイル一覧を更新
   renderFiles();
 
+  // ローカル保存
   saveProjectLocal();
 
+  // エディタの表示を更新
   editor.refresh();
 
 }
