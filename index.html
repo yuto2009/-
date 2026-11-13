@@ -1602,17 +1602,24 @@ await micropip.install(_package_name)
 // ========================================
 
 
-function applyTheme(theme) {
-    document.body.dataset.theme = theme;
 
-    // エディタが初期化済みの場合だけテーマを変更する
-    if (editor) {
+function applyTheme(theme) {
+    const isLight = theme === "light";
+
+    // CSS側の body.light と連動させる
+    document.body.classList.toggle("light", isLight);
+
+    // エディタが初期化済みの場合だけ変更
+    if (editor && typeof editor.setOption === "function") {
         editor.setOption(
             "theme",
-            theme === "dark" ? "material-darker" : "default"
+            isLight ? "eclipse" : "material-darker"
         );
     }
+
+    localStorage.setItem(THEME_KEY, isLight ? "light" : "dark");
 }
+
 
 const savedTheme = localStorage.getItem(THEME_KEY) || "dark";
 
