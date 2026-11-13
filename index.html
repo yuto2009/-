@@ -839,7 +839,7 @@ function renderFiles() {
 
 function switchFile(name) {
 
-  if(!files[name]) return;
+  if(files[name] === undefined) return;
 
   files[currentFile] = editor.getValue();
 
