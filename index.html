@@ -1460,9 +1460,19 @@ async function runPython() {
   try {
 
     // 全ファイルから必要なパッケージを読み込む
-    const allSource = Object.values(files).join("\n");
+    
+// 各Pythonファイルから必要なパッケージを読み込む
+const allSource = Object.values(files).join("\n");
 
-    await pyodide.loadPackagesFromImports(allSource);
+for (const [filename, code] of Object.entries(files)) {
+  try {
+    await pyodide.loadPackagesFromImports(code);
+  } catch (error) {
+    throw new Error(
+      `${filename} のパッケージ読み込みに失敗しました。\n${error.message || error}`
+    );
+  }
+}
 
     // 仮想ファイルシステムへ書き込む
     await writeFilesToPython();
