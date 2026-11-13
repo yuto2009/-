@@ -1620,11 +1620,6 @@ function applyTheme(theme) {
     localStorage.setItem(THEME_KEY, isLight ? "light" : "dark");
 }
 
-
-const savedTheme = localStorage.getItem(THEME_KEY) || "dark";
-
-applyTheme(savedTheme);
-
 $("theme").addEventListener("click",() => {
 
   const next = document.body.classList.contains("light")
@@ -1676,17 +1671,26 @@ $("complete").addEventListener("click",() => {
 $("run").addEventListener("click",runPython);
 
 
+
 // ========================================
 // 20. 起動
 // ========================================
 
 loadProject();
 
+// 先にエディタを作成
 initEditor();
 
+// エディタ作成後にテーマを適用
+const savedTheme = localStorage.getItem(THEME_KEY) || "dark";
+applyTheme(savedTheme);
+
+// ファイル一覧を表示
 renderFiles();
 
+// 最後にPythonを初期化
 initPython();
+
 
 </script>
 
