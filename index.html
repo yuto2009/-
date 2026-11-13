@@ -870,27 +870,31 @@ function switchFile(name) {
 
 }
 
+
 function createFile() {
 
   const name = prompt("ファイル名を入力してください（例: helper.py）");
 
-  if(!name) return;
+  if (!name) return;
 
-  if(!/^[a-zA-Z0-9_-]+\.py$/.test(name)) {
+  if (!/^[a-zA-Z0-9_-]+\.py$/.test(name)) {
     alert("英数字と _、- を使い、.pyで終わる名前にしてください");
     return;
   }
 
-  if(files[name] !== undefined) {
+  if (Object.prototype.hasOwnProperty.call(files, name)) {
     alert("同じファイル名があります");
     return;
   }
 
+  // 空のファイルを作成
   files[name] = "";
 
+  // 作成したファイルを開く
   switchFile(name);
 
 }
+
 
 function deleteFile() {
 
