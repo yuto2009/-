@@ -1701,6 +1701,17 @@ renderFiles();
 // 最後にPythonを初期化
 initPython();
 
+  
+// ========================================
+// ファイル操作ボタンのイベント設定
+// ========================================
+
+$("newFile").addEventListener("click", createFile);
+
+$("deleteFile").addEventListener("click", deleteFile);
+
+$("renameFile").addEventListener("click", renameFile);
+
 
 </script>
 
